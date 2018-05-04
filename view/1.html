@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>聊天市</title>
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/1.css">
+  </head>
+  <body>
+  	<div class="container">
+	    <h1>聊天室</h1>
+	    <div class="row" id="login">
+		  <div class="col-md-12">
+		  <!--输入框-->
+			 <div class="form-group">
+			    <label for="username">姓名</label>
+			    <input  class="form-control" id="username" placeholder="姓名昵称">
+			  </div>
+			  <button type="submit" id="show-btn" class="btn btn-success" >提交</button>
+		  </div>
+		</div>
+		<div class="row" id="content">
+		 		<div class="col-md-12" id="chatcon">
+		 		<span class="count"></span><span class="allPeople"></span>
+		 			<div class="con-item">
+						<p>
+							<span class="label label-info">张三</span>
+						</p>
+						<p><span class="alert alert-warning">
+							大家好我是朱建煌
+						</span></p>
+		 			</div>
+		 			<div class="con-item">
+						<p>
+							<span class="label label-info">小明</span>
+						</p>
+						<p><span class="alert alert-success">
+							大家好我是小明
+						</span></p>
+		 			</div>
+		 		</div>
+	 			<div class="col-md-12">
+					<textarea class="form-control" rows="3" id="msgcon">				
+					</textarea>
+			  		<button type="submit" class="btn btn-success" id="send-btn">提交</button>	
+	 			</div>
+		</div> 	
+  	</div>
+    <script src="js/jquery.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+	<script>
+	  var socket;
+	  var uname;
+	  //创建模板 data:{user:'',msg:''}
+	  function createTpl(data,flag){
+	  	var str = "";
+	  		str +=`<div class="con-item">
+						<p>
+							<span class="label label-info">${flag.name}</span>
+						</p>
+						<p><span class="alert alert-${flag.color}">
+							${data.msg}
+						</span></p>
+		 			</div>`
+		 	return str;
+	  }
+
+	  $("#show-btn").on('click',function(){
+	  	//$.trim()是去掉首尾空格
+	  	uname = $.trim($("#username").val());
+	  	if(uname == ''){
+	  		return
+	  	}
+	  	$("#login").hide();
+	  	$("#content").show();
+	  	//建立链接
+		socket = io.connect('http://localhost:3000');
+		//监听服务器端事件推送
+		socket.on('connect', function () {
+			//当链接成功的时候 发送消息
+		    socket.emit('login',uname)
+		});
+		//msg是传输过来的事件
+		socket.on('msg', function (data) {
+			var flag={};
+			flag.name = ((data.user == uname)?uname:data.user);
+			flag.color = ((data.user == uname)?'success':'warning')
+			var tpl = createTpl(data,flag);
+		  	$("#chatcon").append(tpl)
+		});
+		socket.on('count',function(data){
+			console.log($('.count').eq(0).text())
+			$('.count').text(data)
+		})
+		socket.on('allPeople',function(data){
+			console.log(data)
+			$(".allPeople").html(data)
+		})
+		socket.on('disconnect', function () {
+		    console.log('断开链接');
+		});
+
+	  })
+	  //点击提交 发送消息到服务端
+	 $("#send-btn").on("click",function(){
+	 	//向后端发送事件
+	 	socket.emit("send",$("#msgcon").val())
+	 })
+	</script>
+  </body>
+</html>

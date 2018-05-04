@@ -1,0 +1,2 @@
+1.express 后端框架
+2.socket.io封装了多种协议的websocket库。
